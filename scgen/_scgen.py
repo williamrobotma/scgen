@@ -447,7 +447,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
                 x=x,
                 y=y,
                 arrowprops=dict(arrowstyle="->", color="grey", lw=0.5),
-                force_points=(0.0, 0.0),
+                force_static=(0.0, 0.0),
             )
         if legend:
             pyplot.legend(loc="center left", bbox_to_anchor=(1, 0.5))
