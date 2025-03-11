@@ -3,6 +3,7 @@ from typing import Literal
 import numpy as np
 import torch
 from scvi import REGISTRY_KEYS
+from scvi.module._constants import MODULE_KEYS
 from scvi.module.base import BaseModuleClass, LossOutput, auto_move_data
 from scvi.nn import Encoder
 from torch.distributions import Normal
@@ -86,9 +87,9 @@ class SCGENVAE(BaseModuleClass):
         return input_dict
 
     def _get_generative_input(self, tensors, inference_outputs):
-        z = inference_outputs["z"]
+        z = inference_outputs[MODULE_KEYS.Z_KEY]
         input_dict = {
-            "z": z,
+            MODULE_KEYS.Z_KEY: z,
         }
         return input_dict
 
@@ -101,7 +102,8 @@ class SCGENVAE(BaseModuleClass):
         """
         qz_m, qz_v, z = self.z_encoder(x)
 
-        outputs = dict(z=z, qz_m=qz_m, qz_v=qz_v)
+        # outputs = dict(z=z, qz_m=qz_m, qz_v=qz_v)
+        outputs = {MODULE_KEYS.Z_KEY: z, MODULE_KEYS.QZM_KEY: qz_m, MODULE_KEYS.QZV_KEY: qz_v}
         return outputs
 
     @auto_move_data
@@ -109,7 +111,7 @@ class SCGENVAE(BaseModuleClass):
         """Runs the generative model."""
         px = self.decoder(z)
 
-        return dict(px=px)
+        return {MODULE_KEYS.PX_KEY: px}
 
     def loss(
         self,
@@ -118,9 +120,9 @@ class SCGENVAE(BaseModuleClass):
         generative_outputs,
     ):
         x = tensors[REGISTRY_KEYS.X_KEY]
-        qz_m = inference_outputs["qz_m"]
-        qz_v = inference_outputs["qz_v"]
-        p = generative_outputs["px"]
+        qz_m = inference_outputs[MODULE_KEYS.QZM_KEY]
+        qz_v = inference_outputs[MODULE_KEYS.QZV_KEY]
+        p = generative_outputs[MODULE_KEYS.PX_KEY]
 
         kld = kl(
             Normal(qz_m, torch.sqrt(qz_v)),
@@ -164,7 +166,7 @@ class SCGENVAE(BaseModuleClass):
             inference_kwargs=inference_kwargs,
             compute_loss=False,
         )
-        px = Normal(generative_outputs["px"], 1).sample()
+        px = Normal(generative_outputs[MODULE_KEYS.PX_KEY], 1).sample()
         return px.cpu().numpy()
 
     def get_reconstruction_loss(self, x, px) -> torch.Tensor:
