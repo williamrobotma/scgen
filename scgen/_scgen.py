@@ -9,6 +9,7 @@ from anndata import AnnData
 from matplotlib import pyplot
 from scipy import stats
 from scvi import REGISTRY_KEYS
+from scvi.module._constants import MODULE_KEYS
 from scvi.data import AnnDataManager
 from scvi.data.fields import CategoricalObsField, LayerField
 from scvi.model.base import BaseModelClass, UnsupervisedTrainingMixin, VAEMixin
@@ -161,7 +162,10 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
 
         stim_pred = delta + latent_cd
         predicted_cells = (
-            self.module.generative(torch.Tensor(stim_pred))["px"].cpu().detach().numpy()
+            self.module.generative(torch.Tensor(stim_pred))[MODULE_KEYS.PX_KEY]
+            .cpu()
+            .detach()
+            .numpy()
         )
 
         predicted_adata = AnnData(
@@ -193,7 +197,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
         decoded = []
         for tensors in scdl:
             _, generative_outputs = self.module(tensors, compute_loss=False)
-            px = generative_outputs["px"].cpu()
+            px = generative_outputs[MODULE_KEYS.PX_KEY].cpu()
             decoded.append(px)
 
         return torch.cat(decoded).numpy()
@@ -272,7 +276,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             del all_shared_ann.obs["concat_batch"]
         if len(not_shared_ct) < 1:
             corrected = AnnData(
-                self.module.generative(torch.Tensor(all_shared_ann.X))["px"]
+                self.module.generative(torch.Tensor(all_shared_ann.X))[MODULE_KEYS.PX_KEY]
                 .cpu()
                 .detach()
                 .numpy(),
@@ -302,7 +306,7 @@ class SCGEN(VAEMixin, UnsupervisedTrainingMixin, BaseModelClass):
             if "concat_batch" in all_shared_ann.obs.columns:
                 del all_corrected_data.obs["concat_batch"]
             corrected = AnnData(
-                self.module.generative(torch.Tensor(all_corrected_data.X))["px"]
+                self.module.generative(torch.Tensor(all_corrected_data.X))[MODULE_KEYS.PX_KEY]
                 .cpu()
                 .detach()
                 .numpy(),
