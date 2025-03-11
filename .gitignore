@@ -134,3 +134,4 @@ dmypy.json
 # generated
 *.pdf
 *.pt
+*.h5ad
